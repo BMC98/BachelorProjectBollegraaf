@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os  
 
-def kmeans(img, save_path):
+def kmeans(img, save_path, k):
 
 	##Import an image and convert it to color
 
@@ -19,8 +19,6 @@ def kmeans(img, save_path):
 	"""
 	criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 50, 0.3)
 
-	#5 clusters, for the 4 classes + the background
-	k = 5
 	_, labels, (centers) = cv.kmeans(pixel_values, k, None, criteria, 10, cv.KMEANS_RANDOM_CENTERS)
 
 	# convert back to 8 bit values
@@ -40,14 +38,29 @@ def kmeans(img, save_path):
 
 	cv.waitKey(0)
 
-path = "Fixed_Channels/"
-save_path = "Clustered/"
-images = [img for img in os.listdir(path) if img.endswith(".png")]
+path = "Fixed_Channels_Cropped/"
+save_path = "Clustered_Cropped_Split/"
 
-for img_name in images:
-	image_path = os.path.join(path, img_name)
-	img = cv.imread(image_path)
-	img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-	file_name = os.path.join(save_path, img_name)
-	kmeans(img, file_name)
-	cv.waitKey(0)
+if not os.path.exists(save_path):
+    os.mkdir(save_path) 
+
+for folder in os.listdir(path):
+	new_path = os.path.join(path, folder)
+
+	k = int(folder)
+
+	print(path)
+	print(new_path)
+	print(k, type(k))
+
+	images = [img for img in os.listdir(new_path) if img.endswith(".png")]
+
+	
+	for img_name in images:
+		image_path = os.path.join(new_path, img_name)
+		img = cv.imread(image_path)
+		img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+		file_name = os.path.join(save_path, img_name)
+		kmeans(img, file_name, k)
+		cv.waitKey(0)
+	
