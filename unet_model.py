@@ -1,5 +1,5 @@
 from keras.models import Model 
-from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, concatenate, Conv2DTranspose, BatchNormalization, Dropout, Lambda
+from keras.layers import Input, Activation, Conv2D, MaxPooling2D, UpSampling2D, concatenate, Conv2DTranspose, BatchNormalization, Dropout, Lambda
 from keras import regularizers 
 
 img_height = 512
@@ -61,11 +61,13 @@ def build_unet_model(classes, img_height, img_width, img_channels):
 	c9 = Dropout(0.1)(c9)
 	c9 = Conv2D(8, (3, 3), activation = 'relu', kernel_initializer = 'he_normal', padding = 'same', kernel_regularizer = 'l2')(c9)
 
-	output = Conv2D(classes, (1, 1), activation = 'softmax')(c9)
+	output = Conv2D(classes, (1, 1), name="classificatie")(c9)
+	output = Activation('softmax', name="classificatie_act", dtype='float32')(output)
 
 	model = Model(inputs=[inputs], outputs=[output])
 
 	#model.compile()
 
 	return model 
+
 

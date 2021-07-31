@@ -16,7 +16,7 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 import sys
-import datetime
+from datetime import datetime
 
 train_images = np.load(sys.argv[1])
 train_masks = np.load(sys.argv[2])
@@ -26,9 +26,19 @@ img_width = 512
 img_channels = 3 
 classes = 5 
 
+
+
 def get_model():
     return build_unet_model(classes=classes, img_height=img_height, img_width=img_width, img_channels=img_channels)
 
+def shuffle_in_unison(a, b):
+    np.random.seed(2)
+    rng_state = np.random.get_state()
+    np.random.shuffle(a)
+    np.random.set_state(rng_state)
+    np.random.shuffle(b)
+
+shuffle_in_unison(train_images, train_masks)
 
 def DiceLoss(targets, inputs, smooth=1e-6):
     
@@ -164,20 +174,31 @@ def weighted_ce(y_pred, y_target):
     return K.mean(pp_ce * tf.squeeze(pp_w))
 
 model = get_model()
-print(X_train.shape)
-print(y_train_cat.shape)
+print("Shape of x train: ", X_train.shape)
+print("Shape of y train: ", y_train_cat.shape)
+print("Shape of x test: ", X_test.shape)
+print("Shape of y test: ", y_test_cat.shape)
 
 adamlr = optimizers.Adam(learning_rate = 0.001)
 
 model.compile(optimizer=adamlr, loss=weighted_ce, metrics=['acc'])
 
-log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+# Sets up a timestamped log directory.
+logdir = "logs/train_data/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+# Creates a file writer for the log directory.
+file_writer = tf.summary.create_file_writer(logdir)
+
+with file_writer.as_default():
+  # Don't forget to reshape.
+  images = np.reshape(train_images[0:25], (-1, 512, 512, 3))
+  tf.summary.image("25 training data examples", images, max_outputs=25, step=0)
+
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1)
 
 history = model.fit(X_train, y_train_cat, 
                     batch_size = 32, 
                     verbose=1, 
-                    epochs=10, 
+                    epochs=25, 
                     validation_data=(X_test, y_test_cat), 
                     #class_weight=class_weights,
                     shuffle=True,
